@@ -1,0 +1,13 @@
+[Unit]
+Description=Peerstore Service
+After=network.target
+
+[Service]
+PrivateTmp=true
+PIDFile=/var/run/peerstore/%i.pid
+ExecStart=/usr/bin/peerstore
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

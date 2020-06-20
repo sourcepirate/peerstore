@@ -2,6 +2,8 @@ use siphasher::sip::SipHasher;
 use std::cmp::Ordering;
 use std::hash::{BuildHasher, Hash, Hasher};
 
+pub const RANGE_SIZE : u64 = u64::MAX;
+
 pub struct DefaultClusterHash;
 
 impl BuildHasher for DefaultClusterHash {
@@ -33,13 +35,23 @@ where
         | u64::from(buf[0])
 }
 
+
+#[derive(Clone, Debug)]
 pub struct CHash(u64);
 
 impl CHash {
     pub fn new<U: Hash>(val: U) -> Self {
         let hasher: DefaultClusterHash = DefaultClusterHash;
         let value: u64 = get_hash(&hasher, val);
-        CHash(value)
+        CHash(value % RANGE_SIZE)
+    }
+
+    pub fn min() -> Self {
+        CHash(0)
+    }
+    
+    pub fn max() -> Self {
+        CHash(RANGE_SIZE - 1)
     }
 }
 
@@ -64,3 +76,38 @@ impl Ord for CHash {
 }
 
 
+pub fn inrange(c: &CHash, a: &CHash, b: &CHash)  -> bool {
+   if a <= b {
+       if c >= a && c < b {
+           return true
+       } else {
+           return false
+       }
+   }
+   else {
+       false
+   }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_consistent_compare() {
+        let c1 : CHash = CHash::new("abc");
+        let c2 : CHash = CHash::new("abc");
+
+        assert_eq!(c1, c2);
+    }
+
+
+    #[test]
+    fn test_consistent_range() {
+        let c1 : CHash = CHash::new("abc");
+        assert!(inrange(&c1, &CHash::min(), &CHash::max()))
+    }
+
+
+}
