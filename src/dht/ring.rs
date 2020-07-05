@@ -1,21 +1,46 @@
 use super::consistent::{inrange, CHash};
 use super::ip::get_host_ip;
+use rmp_serde::{Deserializer, Serializer};
 use serde::{Deserialize, Serialize};
 use std::io;
 use std::io::{Read, Write};
 use std::net::SocketAddr;
 use std::net::TcpStream;
-use rmp_serde::{Serializer, Deserializer};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum DHTMessage {
     FindSuccessor(SocketAddr, CHash),
     Node(SocketAddr, CHash),
-    None
+    Join(SocketAddr),
+    None,
+}
+
+impl Default for DHTMessage {
+    fn default() -> DHTMessage {
+        DHTMessage::None
+    }
 }
 
 pub trait Transport {
+    fn serialize(&self, message: DHTMessage) -> Vec<u8>;
+    fn deserialize<R: Read>(&self, reader: R) -> io::Result<DHTMessage>;
     fn send(&self, sock: SocketAddr, message: DHTMessage) -> io::Result<DHTMessage>;
+}
+
+fn serialize_message(message: DHTMessage) -> Vec<u8> {
+    let mut buffer = Vec::new();
+    message
+        .serialize(&mut Serializer::new(&mut buffer))
+        .unwrap();
+    return buffer;
+}
+
+fn deserialize_message<R: Read>(stream: R) -> io::Result<DHTMessage> {
+    let mut deserializer = Deserializer::new(stream);
+    match Deserialize::deserialize(&mut deserializer) {
+        Ok(msg) => Ok(msg),
+        Err(_) => Ok(DHTMessage::None),
+    }
 }
 
 #[derive(Debug)]
@@ -47,14 +72,13 @@ impl<T: Transport> DHTRing<T> {
         let dht_opt = self
             .transport
             .send(node, DHTMessage::FindSuccessor(node, self.id.clone()))?;
-            match dht_opt {
-                DHTMessage::Node(_, hash_id) => {
-                    self.successor = Some(hash_id);
-                    Ok(())
-                }
-                _ => Ok(()),
+        match dht_opt {
+            DHTMessage::Node(_, hash_id) => {
+                self.successor = Some(hash_id);
+                Ok(())
             }
-
+            _ => Ok(()),
+        }
     }
 
     pub fn find_successor(&mut self, node: CHash) -> Option<CHash> {
@@ -93,21 +117,28 @@ impl<T: Transport> DHTRing<T> {
         }
         (self.id, self.addr.clone())
     }
+
+    pub fn transport_layer(&mut self) -> &impl Transport {
+        &self.transport
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
-struct TcpTransport;
+pub struct TcpTransport;
 
 impl Transport for TcpTransport {
+    fn serialize(&self, message: DHTMessage) -> Vec<u8> {
+        serialize_message(message)
+    }
+
+    fn deserialize<R: Read>(&self, reader: R) -> io::Result<DHTMessage> {
+        deserialize_message(reader)
+    }
+
     fn send(&self, sock: SocketAddr, msg: DHTMessage) -> io::Result<DHTMessage> {
-        let mut buffer = Vec::new();
-        msg.serialize(&mut Serializer::new(&mut buffer)).unwrap();
+        let buffer = self.serialize(msg);
         let mut stream = TcpStream::connect(sock)?;
         stream.write(&buffer)?;
-        let mut deserializer = Deserializer::new(stream);
-        match Deserialize::deserialize(&mut deserializer) {
-            Ok(msg) => Ok(msg),
-            Err(_) => Ok(DHTMessage::None)
-        }
+        return self.deserialize(stream);
     }
 }
