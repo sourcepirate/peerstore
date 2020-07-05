@@ -8,3 +8,6 @@ edition = "2018"
 
 [dependencies]
 siphasher = "0.3.3"
+serde = "1.0.114"
+serde_derive = "1.0.114"
+rmp-serde = "0.14.3"

@@ -1,6 +1,8 @@
 use siphasher::sip::SipHasher;
 use std::cmp::Ordering;
 use std::hash::{BuildHasher, Hash, Hasher};
+use serde::{Deserialize, Serialize};
+
 
 pub const RANGE_SIZE : u64 = u64::MAX;
 
@@ -36,7 +38,7 @@ where
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy, Serialize, Deserialize)]
 pub struct CHash(u64);
 
 impl CHash {
