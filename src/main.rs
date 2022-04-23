@@ -1,16 +1,26 @@
-//! Contains the code for implementing a simple blob store based 
-//! On chord dht.
 //! 
 //! 
 //! 
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate siphasher;
-extern crate rmp_serde;
+use std::net::SocketAddrV4;
+use std::net::{TcpListener, TcpStream};
+use std::io::Read;
 
-pub mod dht;
+
+pub mod network;
+pub mod storage;
+pub mod command;
+pub mod peerstore;
+
+use peerstore::PeerStore;
 
 fn main() {
-    println!("Hello, world!");
+    let addr : SocketAddrV4 = "0.0.0.0:8080".parse().expect("unable to parse");
+    let mut store = PeerStore::new();
+    let listener = TcpListener::bind("0.0.0.0:4040").unwrap();
+    for stream in listener.incoming(){
+        let mut intr : TcpStream = stream.unwrap();
+        let mut value : String = String::new() ;
+        intr.read_to_string(&mut value);
+        println!("{}", value);
+    }
 }
