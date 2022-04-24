@@ -8,7 +8,7 @@ pub enum StorageCommand {
 impl From<String> for StorageCommand {
     fn from(cmd: String) -> StorageCommand {
         let tokens: Vec<&str> = (&cmd).split(char::is_whitespace).collect();
-        if (tokens.len() <= 0) {
+        if tokens.len() <= 0 {
             StorageCommand::UnknownCommand
         } else {
             match tokens[0].to_lowercase().as_str() {

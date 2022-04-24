@@ -12,7 +12,7 @@ impl From<String> for NetworkCommand {
 
     fn from(cmd: String) -> NetworkCommand {
         let tokens : Vec<&str> = (&cmd).split(char::is_whitespace).collect();
-        if (tokens.len() <= 0) {
+        if tokens.len() <= 0 {
             NetworkCommand::UnknownCommand
         } else {
             match tokens[0].to_lowercase().as_str() {
@@ -22,4 +22,4 @@ impl From<String> for NetworkCommand {
             }
         }
     }
-}
+} 

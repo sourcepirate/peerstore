@@ -26,8 +26,10 @@ impl PeerStore {
         match command {
             StorageCommand::Put(key, value) => {
                 println!("Put {} => {}", key, value);
-                self.storage.put(key.clone(), value);
-                Some(key.clone())
+                match self.storage.put(key.clone(), value) {
+                    Ok(()) => Some(key.clone()),
+                    Err(_) => None
+                }
             }
             StorageCommand::Get(key) => {
                 println!("Get {}", key);
