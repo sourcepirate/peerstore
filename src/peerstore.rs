@@ -1,4 +1,5 @@
 use crate::command::storage::StorageCommand;
+use crate::command::network::NetworkCommand;
 use crate::network::ring::RingNetwork;
 use crate::storage::memory::MemoryStorage;
 use crate::storage::storage::Storage;
@@ -36,6 +37,22 @@ impl PeerStore {
             StorageCommand::Delete(key) => {
                 println!("Delete {}", key);
                 Some(key.clone())
+            },
+            StorageCommand::UnknownCommand => None
+        }
+    }
+
+    pub fn network_command(&mut self, command: NetworkCommand) -> Option<SocketAddrV4> {
+        match command {
+            NetworkCommand::Join(addr) => {
+                self.network.join(addr);
+                Some(addr)
+            },
+            NetworkCommand::Remove(addr) => {
+                Some(addr)
+            },
+            NetworkCommand::UnknownCommand => {
+                None
             }
         }
     }
