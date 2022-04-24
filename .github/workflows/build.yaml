@@ -1,0 +1,13 @@
+on: [push]
+name: Build Package
+jobs:
+  check:
+    name: Testing and building cargo binary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Run cargo test
+        run: cargo test
+      - name: Build cargo package
+        run: cargo build --release
